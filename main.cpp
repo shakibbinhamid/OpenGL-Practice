@@ -29,7 +29,7 @@ GLuint WIDTH = 800, HEIGHT = 600;
 GLFWwindow* window = nullptr;
 
 // Camera
-Camera camera(glm::vec3(0.0f, 0.0f, 3.0f));
+Camera camera(glm::vec3(0.0f, 0.0f, 4.0f));
 bool keys[1024];
 GLfloat lastX = 400, lastY = 300;
 bool firstMouse = true;
@@ -44,9 +44,11 @@ GLfloat radius = 1.0f;
 glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
 
 std::vector<GLfloat> * generateSphere (std::vector<GLfloat> * vertices, std::vector<GLfloat> * q2Verts, std::vector<GLint> * indices, GLint Stacks, GLint Slices, GLfloat r);
+std::vector<GLfloat> * generateCone(std::vector<GLfloat> * verts, const GLint Stacks, const GLint Slices);
 //void prepareSphereVAO(GLuint * VBO, GLuint * VAO, GLuint * EBO, std::vector<GLfloat> verts, std::vector<GLint> idx, GLsizei stride, const void* pointer);
 void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> * sphere_idx,
                 GLuint * normal_VAO, std::vector<GLfloat> * normal_verts,
+                GLuint * cone_VAO, std::vector<GLfloat> * cone_verts, std::vector<GLint> * cone_idx,
                 Shader * lampShader,
                 GLint * objectColorLoc, GLint * lightColorLoc, GLint * lightPosLoc, GLint * viewPosLoc,
                 GLint * q, GLuint * texture,
@@ -66,14 +68,49 @@ int main() {
     std::vector<GLfloat> sphere_verts;
     std::vector<GLfloat> q2Verts;
     std::vector<GLint> sphere_idx;
+    std::vector<GLfloat> cone_verts;
     
+    generateCone(&cone_verts, stacks, slices);
     generateSphere( &sphere_verts, &q2Verts, &sphere_idx, stacks, slices, radius);
-    /////////////////  GET VAO READY FOR NORMALS  ////////////////////////
     
-    GLuint sphere_VBO, sphere_VAO, sphere_EBO, normal_VAO, normal_VBO;
+    std::vector<GLint> cone_idx(sphere_idx);
+    
+    /////////////////  DECLARATIONS  ////////////////////////
+    
+    GLuint sphere_VBO, sphere_VAO, sphere_EBO, normal_VAO, normal_VBO, cone_VAO, cone_VBO, cone_EBO;
     //prepareSphereVAO(&sphere_VBO, &sphere_VAO, &sphere_EBO, sphere_verts, sphere_idx, 2 * sizeof(glm::vec3), (GLvoid*)0);
     //prepareSphereVAO(&sphere_VBO, &normal_VAO, &sphere_EBO, sphere_verts, sphere_idx, sizeof(glm::vec3), (GLvoid*)0); // EBO and idx doesn't matter
+    
+    /////////////////  GET VAO READY FOR CONE  ////////////////////////
+    
+    glGenVertexArrays(1, &cone_VAO);
+    glGenBuffers(1, &cone_VBO);
+    glGenBuffers(1, &cone_EBO);
+    
+    glBindVertexArray(cone_VAO);
+    
+    // bind VBO and load vertex data on it
+    glBindBuffer(GL_ARRAY_BUFFER, cone_VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * cone_verts.size(), &cone_verts[0], GL_STATIC_DRAW); // circle
+    
+    // bind EBO and load index data on it
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, cone_EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * cone_idx.size(), &cone_idx[0], GL_STATIC_DRAW);
+    
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    
+//    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+//    glEnableVertexAttribArray(1);
+    
+//    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+//    glEnableVertexAttribArray(2);
+    
+    glBindVertexArray(0); // Unbind VAO
+    
     /////////////////  GET VAO READY FOR SPHERE  ////////////////////////
+    
     glGenVertexArrays(1, &sphere_VAO);
     glGenBuffers(1, &sphere_VBO);
     glGenBuffers(1, &sphere_EBO);
@@ -98,7 +135,7 @@ int main() {
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
     glEnableVertexAttribArray(2);
     
-    glBindVertexArray(0); // Unbind VA
+    glBindVertexArray(0); // Unbind VAO
     
     /////////////////  GET VAO READY FOR NORMALS (Q2)  ////////////////////////
     glGenBuffers(1, &normal_VBO);
@@ -178,6 +215,7 @@ int main() {
         
         drawSphere(&sphereShader, &sphere_VAO, &sphere_idx,
                    &normal_VAO, &sphere_verts,
+                   &cone_VAO, &cone_verts, &cone_idx,
                    &lampShader,
                    &objectColorLoc, &lightColorLoc, &lightPosLoc, &viewPosLoc,
                    &q, &texture1,
@@ -199,6 +237,7 @@ int main() {
 
 void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> * sphere_idx,
                 GLuint * normal_VAO, std::vector<GLfloat> * normal_verts,
+                GLuint * cone_VAO, std::vector<GLfloat> * cone_verts, std::vector<GLint> * cone_idx,
                 Shader * lampShader,
                 GLint * objectColorLoc, GLint * lightColorLoc, GLint * lightPosLoc, GLint * viewPosLoc,
                 GLint * q, GLuint * texture,
@@ -234,7 +273,7 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
             glBindVertexArray(0);
         } else if(keys[GLFW_KEY_C]){
             // place the sphere in the right place
-            glm::vec3 lightPos(100.0f, 0.0f, 100.0f);
+            glm::vec3 lightPos(0.0f, 0.0f, 100.0f);
             sphereShader->Use();
             model = glm::translate(model, glm::vec3(0.0f));
             glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
@@ -272,6 +311,26 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
             // draw sphere
             glDrawElements(GL_TRIANGLES, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
         
+            glBindVertexArray(0);
+            
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(1.8f, glm::sin(glfwGetTime() + 300), 0.0f));
+            model = glm::rotate(model, angle, glm::vec3(-1.0f, 0.5f, 1.0f));
+            model = glm::scale(model, glm::vec3(0.1f));
+            glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform3f(*objectColorLoc, 0.5f, 0.31f, 1.00f);
+            glBindVertexArray(*cone_VAO);
+            glDrawElements(GL_TRIANGLES, (GLint)cone_idx->size(), GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
+            
+            model = glm::mat4();
+            model = glm::translate(model, glm::vec3(glm::cos(glfwGetTime() + 300), 1.8f, 0.0f));
+            model = glm::rotate(model, angle, glm::vec3(-1.0f, 0.5f, 1.0f));
+            model = glm::scale(model, glm::vec3(0.1f));
+            glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform3f(*objectColorLoc, 0.5f, 0.31f, 1.00f);
+            glBindVertexArray(*cone_VAO);
+            glDrawElements(GL_TRIANGLES, (GLint)cone_idx->size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
             
             // place light source in the right place
@@ -397,4 +456,27 @@ std::vector<GLfloat> * generateSphere (std::vector<GLfloat> * vertices, std::vec
     }
     
     return vertices;
+}
+
+std::vector<GLfloat> * generateCone(std::vector<GLfloat> * verts, const GLint Stacks, const GLint Slices){
+    
+    GLfloat hInc = 1.0f / Slices;
+    GLfloat tInc = (2 * glm::pi<GLfloat>()) / Stacks;
+    GLfloat h = 1.0f, theta;
+    
+    for (GLint i = 0; i < Slices; i++){
+        h -= hInc;
+        theta = 0.0f;
+        for (GLint j = 0; j < Stacks; j++){
+            theta += tInc;
+            GLfloat x = h * glm::sin(theta);
+            GLfloat y = h * glm::cos(theta);
+            
+            verts->push_back(x);
+            verts->push_back(y);
+            verts->push_back(h);
+        }
+    }
+    
+    return verts;
 }
