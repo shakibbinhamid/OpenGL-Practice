@@ -22,8 +22,6 @@ void main() {
     if (q == 1 || q == 2) color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
     else if (q == 3) color = vec4(0.5f, 0.0f, 0.0f, 1.0f);
     else {
-        
-        
         vec3 norm = normalize(Normal);
         vec3 lightDir = normalize(lightPos - FragPos);
         

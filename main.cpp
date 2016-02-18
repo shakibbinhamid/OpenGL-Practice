@@ -18,6 +18,7 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtx/string_cast.hpp>
 #include "stb_image.h"
 #include "Shader.h"
 #include "Camera.h"
@@ -140,7 +141,8 @@ int main() {
     
     // where the cubes will appear in the world space
     glm::vec3 cubePositions[] = {
-        glm::vec3( 0.5f,  0.0f,  0.0f)
+        glm::vec3(1.5f, 0.0f, 0.0f),
+        glm::vec3(1.0f, 0.0f, 0.0f)
     };
     
     // Get the uniform locations
@@ -171,8 +173,8 @@ int main() {
         glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
         
-        //lightPos.x = sin(glfwGetTime()) * 20.0f;
-        //lightPos.y = cos(glfwGetTime()) * 20.0f;
+        lightPos.x = sin(glfwGetTime()) * 0.1;
+        lightPos.y = cos(glfwGetTime()) * 0.1;
         
         drawSphere(&sphereShader, &sphere_VAO, &sphere_idx,
                    &normal_VAO, &sphere_verts,
@@ -216,9 +218,6 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
     
     GLfloat angle;// angle to rotate the object in model space
     
-    for(GLuint i = 0; i < count; i++){
-        // pass the model matrix to the shader
-        
         if(keys[GLFW_KEY_B]) {
             // draw sphere
             sphereShader->Use();
@@ -249,17 +248,30 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
         } else if (keys[GLFW_KEY_D]){
             // place the sphere in the right place
             sphereShader->Use();
-            angle = (GLfloat)glfwGetTime() * (i + 1);
-            model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
-            model = glm::translate(model, locations[i]);
-            model = glm::scale(model, glm::vec3(0.2f));
-            glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glBindVertexArray(*sphere_VAO);
             glUniform1i(*q, 4);
             glUniform3f(*lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
             glUniform3f(*objectColorLoc, 1.0f, 0.5f, 0.31f);
+            
+            angle = (GLfloat)glfwGetTime() * 2;
+            model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+            model = glm::translate(model, locations[0]);
+            model = glm::scale(model, glm::vec3(0.2f));
+            model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+            glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
             // draw sphere
-            glBindVertexArray(*sphere_VAO);
             glDrawElements(GL_TRIANGLES, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
+            
+            model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+            model = glm::translate(model, locations[0]);
+            model = glm::scale(model, glm::vec3(0.2f));
+            model = glm::rotate(model, angle, glm::vec3(0.0f, 0.0f, 1.0f));
+            glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform3f(*objectColorLoc, 0.31f, 0.5f, 1.00f);
+            
+            // draw sphere
+            glDrawElements(GL_TRIANGLES, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
+        
             glBindVertexArray(0);
             
             // place light source in the right place
@@ -306,7 +318,6 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
             glDrawElements(GL_LINE_STRIP, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
         }
-    }
     
     glBindVertexArray(0); // done drawing sphere, unload VAO
 }
