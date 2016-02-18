@@ -18,7 +18,7 @@
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
-const int qKeys[] = {GLFW_KEY_A, GLFW_KEY_B, GLFW_KEY_C, GLFW_KEY_D, GLFW_KEY_E, GLFW_KEY_F};
+const int qKeys[] = {GLFW_KEY_A, GLFW_KEY_B, GLFW_KEY_C, GLFW_KEY_D, GLFW_KEY_E};
 
 //#define GL_LOG_FILE "/Users/shakib-binhamid/Desktop/OpenGL Test Ground/OpenGL TestGround 2/OpenGL TestGround 2/gl.log"
 
@@ -73,7 +73,7 @@ bool start_gl () {
 
 void setActive(int active){
     keys[active] = true;
-    for(int i=0; i < 6; i++){
+    for(int i=0; i < 5; i++){
         if (active != qKeys[i])
             keys[qKeys[i]] = false;
     }

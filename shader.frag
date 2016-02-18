@@ -5,6 +5,8 @@ float specularStrength = 0.5f;
 in vec3 Normal;
 in vec3 FragPos;
 
+in vec2 TexCoord;
+
 out vec4 color;
 
 uniform vec3 objectColor;
@@ -12,12 +14,16 @@ uniform vec3 lightColor;
 uniform vec3 lightPos;
 uniform vec3 viewPos;
 
+uniform sampler2D ourTexture1;
+
 uniform int q;
 
 void main() {
     if (q == 1 || q == 2) color = vec4(0.5f, 0.5f, 0.5f, 1.0f);
     else if (q == 3) color = vec4(0.5f, 0.0f, 0.0f, 1.0f);
     else {
+        
+        
         vec3 norm = normalize(Normal);
         vec3 lightDir = normalize(lightPos - FragPos);
         
@@ -35,6 +41,7 @@ void main() {
         
         vec3 result = (ambient + diffuse + specular) * objectColor;
         
-        color = vec4(result, 1.0f);
+        if (q == 5) color = texture(ourTexture1, TexCoord);
+        else color = vec4(result, 1.0f);
     }
 }

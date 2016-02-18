@@ -42,13 +42,13 @@ GLfloat radius = 1.0f;
 
 glm::vec3 lightPos(0.0f, 0.0f, 0.0f);
 
-std::vector<glm::vec3> * generateSphere (std::vector<glm::vec3> * vertices, std::vector<GLint> * indices, GLint Stacks, GLint Slices, GLfloat r);
-void prepareSphereVAO(GLuint * VBO, GLuint * VAO, GLuint * EBO, std::vector<glm::vec3> verts, std::vector<GLint> idx, GLsizei stride, const void* pointer);
+std::vector<GLfloat> * generateSphere (std::vector<GLfloat> * vertices, std::vector<GLfloat> * q2Verts, std::vector<GLint> * indices, GLint Stacks, GLint Slices, GLfloat r);
+//void prepareSphereVAO(GLuint * VBO, GLuint * VAO, GLuint * EBO, std::vector<GLfloat> verts, std::vector<GLint> idx, GLsizei stride, const void* pointer);
 void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> * sphere_idx,
-                GLuint * normal_VAO, std::vector<glm::vec3> * normal_verts,
+                GLuint * normal_VAO, std::vector<GLfloat> * normal_verts,
                 Shader * lampShader,
                 GLint * objectColorLoc, GLint * lightColorLoc, GLint * lightPosLoc, GLint * viewPosLoc,
-                GLint * q,
+                GLint * q, GLuint * texture,
                 GLuint count, glm::vec3 * locations, GLint * modelLoc, GLint * viewLoc, GLint * projLoc);
 // The MAIN function, from here we start the application and run the game loop
 int main() {
@@ -62,15 +62,81 @@ int main() {
     Shader lampShader("/Users/shakib-binhamid/Desktop/OpenGL Practice/OpenGL Tutorial Solo 1/OpenGL Tutorial Solo 1/shader.vs", "/Users/shakib-binhamid/Desktop/OpenGL Practice/OpenGL Tutorial Solo 1/OpenGL Tutorial Solo 1/lamp.frag");
     
     /////// Sphere vertices, normals and indices generation  //////////////////////////////////////////
-    std::vector<glm::vec3> sphere_verts;
+    std::vector<GLfloat> sphere_verts;
+    std::vector<GLfloat> q2Verts;
     std::vector<GLint> sphere_idx;
     
-    generateSphere( &sphere_verts, &sphere_idx, stacks, slices, radius);
+    generateSphere( &sphere_verts, &q2Verts, &sphere_idx, stacks, slices, radius);
     /////////////////  GET VAO READY FOR NORMALS  ////////////////////////
     
-    GLuint sphere_VBO, sphere_VAO, sphere_EBO, normal_VAO;
-    prepareSphereVAO(&sphere_VBO, &sphere_VAO, &sphere_EBO, sphere_verts, sphere_idx, 2 * sizeof(glm::vec3), (GLvoid*)0);
-    prepareSphereVAO(&sphere_VBO, &normal_VAO, &sphere_EBO, sphere_verts, sphere_idx, sizeof(glm::vec3), (GLvoid*)0); // EBO and idx doesn't matter
+    GLuint sphere_VBO, sphere_VAO, sphere_EBO, normal_VAO, normal_VBO;
+    //prepareSphereVAO(&sphere_VBO, &sphere_VAO, &sphere_EBO, sphere_verts, sphere_idx, 2 * sizeof(glm::vec3), (GLvoid*)0);
+    //prepareSphereVAO(&sphere_VBO, &normal_VAO, &sphere_EBO, sphere_verts, sphere_idx, sizeof(glm::vec3), (GLvoid*)0); // EBO and idx doesn't matter
+    /////////////////  GET VAO READY FOR SPHERE  ////////////////////////
+    glGenVertexArrays(1, &sphere_VAO);
+    glGenBuffers(1, &sphere_VBO);
+    glGenBuffers(1, &sphere_EBO);
+    
+    glBindVertexArray(sphere_VAO);
+    
+    // bind VBO and load vertex data on it
+    glBindBuffer(GL_ARRAY_BUFFER, sphere_VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * sphere_verts.size(), &sphere_verts[0], GL_STATIC_DRAW); // circle
+    
+    // bind EBO and load index data on it
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_EBO);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * sphere_idx.size(), &sphere_idx[0], GL_STATIC_DRAW);
+    
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(3 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(1);
+    
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 8 * sizeof(GLfloat), (GLvoid*)(6 * sizeof(GLfloat)));
+    glEnableVertexAttribArray(2);
+    
+    glBindVertexArray(0); // Unbind VA
+    
+    /////////////////  GET VAO READY FOR NORMALS (Q2)  ////////////////////////
+    glGenBuffers(1, &normal_VBO);
+    glGenVertexArrays(1, &normal_VAO);
+    glBindVertexArray(normal_VAO);
+    
+    // bind VBO and load vertex data on it
+    glBindBuffer(GL_ARRAY_BUFFER, normal_VBO);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * q2Verts.size(), &q2Verts[0], GL_STATIC_DRAW); // circle
+    
+    // Position attribute
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(GLfloat), (GLvoid*)0);
+    glEnableVertexAttribArray(0);
+    
+    glBindVertexArray(0); // Unbind VAO
+    
+    /////////////////  GET Textures ready  ////////////////////////
+    
+    GLuint texture1;
+    
+    int width, height, comp;
+    unsigned char* image;
+    
+    glGenTextures(1, &texture1);
+    glBindTexture(GL_TEXTURE_2D, texture1); // All upcoming GL_TEXTURE_2D operations now have effect on our texture object
+    // Set our texture parameters
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	// Set texture wrapping to GL_REPEAT
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    // Set texture filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // Load, create texture and generate mipmaps
+    image = stbi_load("/Users/shakib-binhamid/Desktop/OpenGL Practice/OpenGL Tutorial Solo 1/OpenGL Tutorial Solo 1/earth.jpg", &width, &height, &comp, STBI_rgb_alpha);
+    if(image == nullptr)
+        throw(std::string("Failed to load texture"));
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, image);
+    glGenerateMipmap(GL_TEXTURE_2D);
+    stbi_image_free(image);
+    glBindTexture(GL_TEXTURE_2D, 0); // Unbind texture when done, so we won't accidentily mess up our texture.
     
     // where the cubes will appear in the world space
     glm::vec3 cubePositions[] = {
@@ -112,7 +178,7 @@ int main() {
                    &normal_VAO, &sphere_verts,
                    &lampShader,
                    &objectColorLoc, &lightColorLoc, &lightPosLoc, &viewPosLoc,
-                   &q,
+                   &q, &texture1,
                    2, cubePositions, &modelLoc, &viewLoc, &projLoc);
         
         // Swap the screen buffers
@@ -130,10 +196,10 @@ int main() {
 }
 
 void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> * sphere_idx,
-                GLuint * normal_VAO, std::vector<glm::vec3> * normal_verts,
+                GLuint * normal_VAO, std::vector<GLfloat> * normal_verts,
                 Shader * lampShader,
                 GLint * objectColorLoc, GLint * lightColorLoc, GLint * lightPosLoc, GLint * viewPosLoc,
-                GLint * q,
+                GLint * q, GLuint * texture,
                 GLuint count, glm::vec3 * locations, GLint * modelLoc, GLint * viewLoc, GLint * projLoc) {
     // Activate shader
     sphereShader->Use();
@@ -180,7 +246,7 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
             glBindVertexArray(*sphere_VAO);
             glDrawElements(GL_TRIANGLES, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
-        }else if (keys[GLFW_KEY_D]){
+        } else if (keys[GLFW_KEY_D]){
             // place the sphere in the right place
             sphereShader->Use();
             angle = (GLfloat)glfwGetTime() * (i + 1);
@@ -211,6 +277,25 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
             glBindVertexArray(*sphere_VAO);
             glDrawElements(GL_TRIANGLES, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
             glBindVertexArray(0);
+        } else if (keys[GLFW_KEY_E]) {
+            // place sphere in right place
+            glm::vec3 lightPos(100.0f, 0.0f, 100.0f);
+            sphereShader->Use();
+            model = glm::translate(model, glm::vec3(0.0f));
+            glUniformMatrix4fv(*modelLoc, 1, GL_FALSE, glm::value_ptr(model));
+            glUniform1i(*q, 5);
+            glUniform3f(*lightPosLoc, lightPos.x, lightPos.y, lightPos.z);
+            glUniform3f(*objectColorLoc, 1.0f, 0.5f, 0.31f);
+            
+            // Bind Textures using texture units
+            glActiveTexture(GL_TEXTURE0);
+            glBindTexture(GL_TEXTURE_2D, *texture);
+            glUniform1i(glGetUniformLocation(sphereShader->Program, "ourTexture1"), 0);
+            
+            // draw sphere
+            glBindVertexArray(*sphere_VAO);
+            glDrawElements(GL_TRIANGLES, (GLint)sphere_idx->size(), GL_UNSIGNED_INT, 0);
+            glBindVertexArray(0);
         } else{
             // place sphere in right place
             sphereShader->Use();
@@ -226,32 +311,32 @@ void drawSphere(Shader * sphereShader, GLuint * sphere_VAO, std::vector<GLint> *
     glBindVertexArray(0); // done drawing sphere, unload VAO
 }
 
-void prepareSphereVAO(GLuint * VBO, GLuint * VAO, GLuint * EBO, std::vector<glm::vec3> verts, std::vector<GLint> idx, GLsizei stride, const void* pointer){
-    glGenVertexArrays(1, VAO);
-    glGenBuffers(1, VBO);
-    glGenBuffers(1, EBO);
-    
-    glBindVertexArray(*VAO);
-    
-    // bind VBO and load vertex data on it
-    glBindBuffer(GL_ARRAY_BUFFER, *VBO);
-    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * verts.size(), &verts[0], GL_STATIC_DRAW); // circle
-    
-    // bind EBO and load index data on it
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *EBO);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * idx.size(), &idx[0], GL_STATIC_DRAW);
-    
-    // Position attribute
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, pointer);
-    glEnableVertexAttribArray(0);
-    
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(sizeof(glm::vec3)));
-    glEnableVertexAttribArray(1);
-    
-    glBindVertexArray(0); // Unbind VAO
-}
+//void prepareSphereVAO(GLuint * VBO, GLuint * VAO, GLuint * EBO, std::vector<glm::vec3> verts, std::vector<GLint> idx, GLsizei stride, const void* pointer){
+//    glGenVertexArrays(1, VAO);
+//    glGenBuffers(1, VBO);
+//    glGenBuffers(1, EBO);
+//    
+//    glBindVertexArray(*VAO);
+//    
+//    // bind VBO and load vertex data on it
+//    glBindBuffer(GL_ARRAY_BUFFER, *VBO);
+//    glBufferData(GL_ARRAY_BUFFER, sizeof(glm::vec3) * verts.size(), &verts[0], GL_STATIC_DRAW); // circle
+//    
+//    // bind EBO and load index data on it
+//    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, *EBO);
+//    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(GLint) * idx.size(), &idx[0], GL_STATIC_DRAW);
+//    
+//    // Position attribute
+//    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, stride, pointer);
+//    glEnableVertexAttribArray(0);
+//    
+//    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 6 * sizeof(GLfloat), (GLvoid*)(sizeof(glm::vec3)));
+//    glEnableVertexAttribArray(1);
+//    
+//    glBindVertexArray(0); // Unbind VAO
+//}
 
-std::vector<glm::vec3> * generateSphere (std::vector<glm::vec3> * vertices, std::vector<GLint> * indices, const GLint Stacks, const GLint Slices, const GLfloat r){
+std::vector<GLfloat> * generateSphere (std::vector<GLfloat> * vertices, std::vector<GLfloat> * q2Verts, std::vector<GLint> * indices, const GLint Stacks, const GLint Slices, const GLfloat r){
     for (int i = 0; i <= Stacks; ++i){
         float V   = i / (float) Stacks;
         float phi = V * glm::pi <float> ();
@@ -267,8 +352,26 @@ std::vector<glm::vec3> * generateSphere (std::vector<glm::vec3> * vertices, std:
             
             // Push Back Vertex Data
             glm::vec3 v(x, y, z);
-            vertices->push_back (v); // vertex
-            vertices->push_back(v + glm::normalize(v) * 0.05f); // normal
+            glm::vec3 n(v + glm::normalize(v) * 0.05f);
+            vertices->push_back (v.x); // vertex
+            vertices->push_back (v.y);
+            vertices->push_back (v.z);
+            
+            vertices->push_back (n.x); // normal
+            vertices->push_back (n.y);
+            vertices->push_back (n.z);
+            
+            vertices->push_back (U); // vertex
+            vertices->push_back (V);
+            
+            
+            q2Verts->push_back (v.x); // vertex
+            q2Verts->push_back (v.y);
+            q2Verts->push_back (v.z);
+            
+            q2Verts->push_back (n.x); // normal
+            q2Verts->push_back (n.y);
+            q2Verts->push_back (n.z);
         }
     }
     
