@@ -1,11 +1,11 @@
 /*****************************************************************************\
- | OpenGL                                                                      |
+ | OpenGL Coursework 1                                                         |
  |                                                                             |
  | Email: sh3g12 at soton dot ac dot uk                                        |
  | version 0.0.1                                                               |
  | Copyright Shakib Bin Hamid                                                  |
  |*****************************************************************************|
- |                                                                             |
+ | This is where I've put commands about loading Shader files, compiling them. |
  \*****************************************************************************/
 
 #ifndef SHADER_H
@@ -52,8 +52,7 @@ private:
             in.close();
             // Add a valid C - string end
             buffer[length] = '\0';
-        }
-        else {
+        } else {
             if(!success) {
                 std::cout << "ERROR::SHADER::PROGRAM::SHADER_SOURCE_READ_FAILED\n" << std::endl;
                 glfwTerminate();
@@ -62,17 +61,17 @@ private:
         }
     }
     GLuint makeShader(const char *fname, GLenum shaderType) {
+        
         // Load a shader from an external file
         std::vector<char> buffer;
         readShaderSource(fname, buffer);
         const char *src = &buffer[0];
         
-        //std::cout << std::string(buffer.data()) << std::endl;
-        
         // Compile the shader
         GLuint shader = glCreateShader(shaderType);
         glShaderSource(shader, 1, &src, NULL);
         glCompileShader(shader);
+        
         // Check the result of the compilation
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if(!success) {
@@ -81,9 +80,11 @@ private:
             glfwTerminate();
             exit(-1);
         }
+        
         return shader;
     }
     GLuint create_program(const char *path_vert_shader, const char *path_frag_shader) {
+        
         // Load and compile the vertex and fragment shaders
         GLuint vertexShader = makeShader(path_vert_shader, GL_VERTEX_SHADER);
         GLuint fragmentShader = makeShader(path_frag_shader, GL_FRAGMENT_SHADER);

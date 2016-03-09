@@ -1,18 +1,19 @@
 /*****************************************************************************\
- | OpenGL                                                                      |
+ | OpenGL Coursework 1                                                         |
  |                                                                             |
  | Email: sh3g12 at soton dot ac dot uk                                        |
  | version 0.0.1                                                               |
  | Copyright Shakib Bin Hamid                                                  |
  |*****************************************************************************|
- |                                                                             |
+ | This is where I've put commands about the camera.                           |
+ | Using Euler angles                                                          |
+ | This is an almost exact copy of the tutorial by  Joey de Vries at           |
+ | http://learnopengl.com/#!Getting-started/Camera                             |
  \*****************************************************************************/
+
 #pragma once
 
-// Std. Includes
 #include <vector>
-
-// GL Includes
 #include <GL/glew.h>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -31,7 +32,6 @@ const GLfloat PITCH      =  0.0f;
 const GLfloat SPEED      =  3.0f;
 const GLfloat SENSITIVTY =  0.25f;
 const GLfloat ZOOM       =  45.0f;
-
 
 // An abstract camera class that processes input and calculates the corresponding Eular Angles, Vectors and Matrices for use in OpenGL
 class Camera {

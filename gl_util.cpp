@@ -1,12 +1,14 @@
 /*****************************************************************************\
- | OpenGL                                                                      |
+ | OpenGL Coursework 1                                                         |
  |                                                                             |
  | Email: sh3g12 at soton dot ac dot uk                                        |
  | version 0.0.1                                                               |
  | Copyright Shakib Bin Hamid                                                  |
  |*****************************************************************************|
- |                                                                             |
+ | This is where I've put commands about the glew and glfw init.               |
+ | Also, the camera commands, keyboard and mouse movements are declared here.  |
  \*****************************************************************************/
+
 #include "gl_util.hpp"
 #include <stdio.h>
 #include <time.h>
@@ -18,11 +20,10 @@
 void key_callback(GLFWwindow* window, int key, int scancode, int action, int mode);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 
+// question switching
 const int qKeys[] = {GLFW_KEY_A, GLFW_KEY_B, GLFW_KEY_C, GLFW_KEY_D, GLFW_KEY_E};
 
-//#define GL_LOG_FILE "/Users/shakib-binhamid/Desktop/OpenGL Test Ground/OpenGL TestGround 2/OpenGL TestGround 2/gl.log"
-
-/*--------------------------------GLFW3 and GLEW-----------------------------*/
+////////////////////// GLEW AND GLFW SCAFFOLDING //////////////////////////////////////////////////
 bool start_gl () {
     
     printf ("starting GLFW %s", glfwGetVersionString ());
@@ -71,6 +72,7 @@ bool start_gl () {
     return true;
 }
 
+// set a question active
 void setActive(int active){
     keys[active] = true;
     for(int i=0; i < 5; i++){
